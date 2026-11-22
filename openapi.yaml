@@ -1,0 +1,1438 @@
+openapi: 3.1.0
+info:
+  title: SmartOrchard Backend API
+  version: 1.0.0
+servers:
+- url: /v1
+paths:
+  /crops:
+    get:
+      tags:
+      - crops
+      operationId: listCrops
+      summary: Список культур
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Crop'
+        '500':
+          $ref: '#/components/responses/Error500'
+    post:
+      tags:
+      - crops
+      operationId: createCrop
+      summary: Создать культуру
+      description: При отсутствии prefix сервер формирует его из названия.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CropInput'
+      responses:
+        '201':
+          description: Запись создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Crop'
+        '409':
+          $ref: '#/components/responses/Error409createCrop'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /crops/{crop_id}:
+    parameters:
+    - $ref: '#/components/parameters/crop_id'
+    get:
+      tags:
+      - crops
+      operationId: getCrop
+      summary: Получить культуру
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Crop'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+    put:
+      tags:
+      - crops
+      operationId: updateCrop
+      summary: Обновить культуру
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CropInput'
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Crop'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409updateCrop'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '500':
+          $ref: '#/components/responses/Error500'
+    delete:
+      tags:
+      - crops
+      operationId: deleteCrop
+      summary: Удалить культуру
+      responses:
+        '204':
+          description: Запись удалена
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409deleteCrop'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /gardens:
+    get:
+      tags:
+      - gardens
+      operationId: listGardens
+      summary: Список садов
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Garden'
+        '500':
+          $ref: '#/components/responses/Error500'
+    post:
+      tags:
+      - gardens
+      operationId: createGarden
+      summary: Создать сад
+      description: Культура должна существовать. Число деревьев = floor(area_ha × 10000 / (row_spacing × tree_spacing)),
+        от 1 до 10000. Ряды и места нумеруются с 1. Максимум 100 рядов. Начальный статус UNKNOWN.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GardenInput'
+      responses:
+        '201':
+          description: Запись создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Garden'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /gardens/{garden_id}:
+    parameters:
+    - $ref: '#/components/parameters/garden_id'
+    get:
+      tags:
+      - gardens
+      operationId: getGarden
+      summary: Получить сад
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Garden'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+    delete:
+      tags:
+      - gardens
+      operationId: deleteGarden
+      summary: Удалить сад
+      description: Удаляет также деревья, зоны, расписания, затраты, осмотры и заметки сада.
+      responses:
+        '204':
+          description: Запись удалена
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /gardens/{garden_id}/finance:
+    parameters:
+    - $ref: '#/components/parameters/garden_id'
+    patch:
+      tags:
+      - gardens
+      operationId: updateFinance
+      summary: Обновить финансы сада
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Finance'
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Finance'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /gardens/{garden_id}/trees:
+    parameters:
+    - $ref: '#/components/parameters/garden_id'
+    get:
+      tags:
+      - trees
+      operationId: listTrees
+      summary: Список деревьев сада
+      parameters:
+      - name: row
+        in: query
+        required: false
+        description: Номер ряда
+        schema:
+          type: integer
+          minimum: 1
+      - name: status
+        in: query
+        required: false
+        description: Состояние
+        schema:
+          $ref: '#/components/schemas/TreeStatus'
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tree'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /gardens/{garden_id}/trees/{tree_id}:
+    parameters:
+    - $ref: '#/components/parameters/garden_id'
+    - $ref: '#/components/parameters/tree_id'
+    get:
+      tags:
+      - trees
+      operationId: getTree
+      summary: Получить дерево
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tree'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /gardens/{garden_id}/trees/lookup:
+    parameters:
+    - $ref: '#/components/parameters/garden_id'
+    get:
+      tags:
+      - trees
+      operationId: lookupTree
+      summary: Поиск дерева по ряду и месту
+      parameters:
+      - name: row
+        in: query
+        required: true
+        description: Номер ряда
+        schema:
+          type: integer
+          minimum: 1
+      - name: place
+        in: query
+        required: true
+        description: Место в ряду
+        schema:
+          type: integer
+          minimum: 1
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tree'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /trees/lookup-qr:
+    get:
+      tags:
+      - trees
+      operationId: lookupQr
+      summary: Поиск дерева по QR-коду
+      parameters:
+      - name: code
+        in: query
+        required: true
+        description: Содержимое QR-метки smartorchard://tree/<uuid>
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TreeLookup'
+        '400':
+          $ref: '#/components/responses/Error400lookupQr'
+        '404':
+          $ref: '#/components/responses/Error404lookupQr'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /gardens/{garden_id}/trees/{tree_id}/observations:
+    parameters:
+    - $ref: '#/components/parameters/garden_id'
+    - $ref: '#/components/parameters/tree_id'
+    post:
+      tags:
+      - observations
+      operationId: createObservation
+      summary: Создать осмотр
+      description: Обновляет состояние дерева. Для ручного осмотра нужны комментарий, фото или изменение статуса.
+        При использовании ИИ заполните диагноз и рекомендации. Исходный ответ модели можно сохранить в original_ai.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ObservationInput'
+            encoding:
+              photo:
+                contentType: image/jpeg, image/png
+              original_ai:
+                contentType: application/json
+      responses:
+        '201':
+          description: Запись создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Observation'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '500':
+          $ref: '#/components/responses/Error500'
+    get:
+      tags:
+      - observations
+      operationId: listObservations
+      summary: Список осмотров дерева
+      description: Сортировка по убыванию created_at.
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Observation'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /gardens/{garden_id}/trees/{tree_id}/observations/{observation_id}:
+    parameters:
+    - $ref: '#/components/parameters/garden_id'
+    - $ref: '#/components/parameters/tree_id'
+    - $ref: '#/components/parameters/observation_id'
+    get:
+      tags:
+      - observations
+      operationId: getObservation
+      summary: Получить осмотр
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Observation'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /diagnosis/analyze:
+    post:
+      tags:
+      - diagnosis
+      operationId: analyzePhoto
+      summary: Запустить анализ
+      description: Запланированный метод для подключения модели. Анализ предшествует сохранению осмотра. Таймаут
+        модели 30 секунд.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DiagnosisInput'
+            encoding:
+              photo:
+                contentType: image/jpeg, image/png
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiResult'
+        '400':
+          $ref: '#/components/responses/Error400analyzePhoto'
+        '422':
+          $ref: '#/components/responses/Error422analyzePhoto'
+        '429':
+          $ref: '#/components/responses/Error429analyzePhoto'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503analyzePhoto'
+  /gardens/{garden_id}/zones:
+    parameters:
+    - $ref: '#/components/parameters/garden_id'
+    get:
+      tags:
+      - zones
+      operationId: listZones
+      summary: Список зон сада
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Zone'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+    post:
+      tags:
+      - zones
+      operationId: createZone
+      summary: Создать зону
+      description: Все деревья принадлежат данному саду.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZoneInput'
+      responses:
+        '201':
+          description: Запись создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409createZone'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /gardens/{garden_id}/zones/{zone_id}:
+    parameters:
+    - $ref: '#/components/parameters/garden_id'
+    - $ref: '#/components/parameters/zone_id'
+    get:
+      tags:
+      - zones
+      operationId: getZone
+      summary: Получить зону
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+    put:
+      tags:
+      - zones
+      operationId: updateZone
+      summary: Обновить зону
+      description: Все деревья принадлежат данному саду.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZoneInput'
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409updateZone'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '500':
+          $ref: '#/components/responses/Error500'
+    delete:
+      tags:
+      - zones
+      operationId: deleteZone
+      summary: Удалить зону
+      description: Удаляет расписания зоны.
+      responses:
+        '204':
+          description: Запись удалена
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /gardens/{garden_id}/schedules:
+    parameters:
+    - $ref: '#/components/parameters/garden_id'
+    get:
+      tags:
+      - schedules
+      operationId: listSchedules
+      summary: Список расписаний сада
+      description: Сортировка по start.
+      parameters:
+      - name: zone_id
+        in: query
+        required: false
+        description: Зона полива
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: date
+        in: query
+        required: false
+        description: Интервалы, пересекающие этот день
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Schedule'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+    post:
+      tags:
+      - schedules
+      operationId: createSchedule
+      summary: Создать расписание
+      description: Зона должна принадлежать саду. Конец интервала строго позже начала.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduleInput'
+      responses:
+        '201':
+          description: Запись создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409createSchedule'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /gardens/{garden_id}/schedules/{schedule_id}:
+    parameters:
+    - $ref: '#/components/parameters/garden_id'
+    - $ref: '#/components/parameters/schedule_id'
+    delete:
+      tags:
+      - schedules
+      operationId: deleteSchedule
+      summary: Удалить расписание
+      responses:
+        '204':
+          description: Запись удалена
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /gardens/{garden_id}/expenses:
+    parameters:
+    - $ref: '#/components/parameters/garden_id'
+    get:
+      tags:
+      - expenses
+      operationId: listExpenses
+      summary: Список затрат сада
+      parameters:
+      - name: category
+        in: query
+        required: false
+        description: Категория
+        schema:
+          type: string
+      - name: from
+        in: query
+        required: false
+        description: Начало диапазона включительно
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        required: false
+        description: Конец диапазона включительно
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Expense'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+    post:
+      tags:
+      - expenses
+      operationId: createExpense
+      summary: Создать затрату
+      description: Категория задаётся свободным текстом. Сервер вычисляет total_cents = round(quantity × price ×
+        100).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenseInput'
+      responses:
+        '201':
+          description: Запись создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /gardens/{garden_id}/trees/{tree_id}/notes:
+    parameters:
+    - $ref: '#/components/parameters/garden_id'
+    - $ref: '#/components/parameters/tree_id'
+    get:
+      tags:
+      - notes
+      operationId: listNotes
+      summary: Список заметок дерева
+      description: Сортировка по убыванию created_at.
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TreeNote'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
+    post:
+      tags:
+      - notes
+      operationId: createNote
+      summary: Создать заметку
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoteInput'
+      responses:
+        '201':
+          description: Запись создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TreeNote'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /settings:
+    get:
+      tags:
+      - settings
+      operationId: getSettings
+      summary: Получить настройки
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settings'
+        '500':
+          $ref: '#/components/responses/Error500'
+    patch:
+      tags:
+      - settings
+      operationId: updateSettings
+      summary: Обновить текущий сад
+      description: Сад должен существовать.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettingsInput'
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settings'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /settings/printer:
+    put:
+      tags:
+      - settings
+      operationId: setPrinter
+      summary: Подключить принтер
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrinterInput'
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Printer'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '500':
+          $ref: '#/components/responses/Error500'
+    delete:
+      tags:
+      - settings
+      operationId: clearPrinter
+      summary: Отключить принтер
+      description: 'Возвращает device: null.'
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Printer'
+        '500':
+          $ref: '#/components/responses/Error500'
+components:
+  parameters:
+    crop_id:
+      name: crop_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+    garden_id:
+      name: garden_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+    tree_id:
+      name: tree_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+    observation_id:
+      name: observation_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+    zone_id:
+      name: zone_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+    schedule_id:
+      name: schedule_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+  responses:
+    Error500:
+      description: Внутренняя ошибка сервера.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error404:
+      description: NOT_FOUND - ресурс не найден.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error409createCrop:
+      description: DUPLICATE - совпадают название, сорт и оба посадочных расстояния.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error422:
+      description: VALIDATION_ERROR - ошибка валидации.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error409updateCrop:
+      description: DUPLICATE - совпадают название, сорт и оба посадочных расстояния.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error409deleteCrop:
+      description: CONFLICT - культура используется в саду.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error400lookupQr:
+      description: INVALID_QR
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error404lookupQr:
+      description: NOT_FOUND
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error400analyzePhoto:
+      description: NO_PHOTO
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error422analyzePhoto:
+      description: ANALYSIS_FAILED
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error429analyzePhoto:
+      description: Превышен лимит запросов.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error503analyzePhoto:
+      description: SERVICE_UNAVAILABLE
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error409createZone:
+      description: DUPLICATE - имя зоны занято; CONFLICT - дерево входит в другую зону.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error409updateZone:
+      description: DUPLICATE - имя зоны занято; CONFLICT - дерево входит в другую зону.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error409createSchedule:
+      description: CONFLICT - пересечение интервалов одной зоны.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    UUID:
+      type: string
+      format: uuid
+      description: UUID v4.
+    TreeStatus:
+      type: string
+      enum:
+      - HEALTHY
+      - WARNING
+      - DEAD
+      - UNKNOWN
+    CropInput:
+      type: object
+      required:
+      - name
+      - row_spacing
+      - tree_spacing
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 60
+        variety:
+          type: string
+          maxLength: 60
+        row_spacing:
+          type: string
+          pattern: ^(?=.*[1-9])[0-9]+([.,][0-9]{1,3})?$
+          description: Десятичная строка. В запросе допустимы точка и запятая, в ответе используется точка.
+        tree_spacing:
+          type: string
+          pattern: ^(?=.*[1-9])[0-9]+([.,][0-9]{1,3})?$
+          description: Десятичная строка. В запросе допустимы точка и запятая, в ответе используется точка.
+        prefix:
+          type: string
+          description: При отсутствии сервер формирует префикс из названия.
+    Crop:
+      type: object
+      required:
+      - id
+      - name
+      - row_spacing
+      - tree_spacing
+      - prefix
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 60
+        variety:
+          type: string
+          maxLength: 60
+        row_spacing:
+          type: string
+          pattern: ^(?=.*[1-9])[0-9]+([.,][0-9]{1,3})?$
+          description: Десятичная строка. В запросе допустимы точка и запятая, в ответе используется точка.
+        tree_spacing:
+          type: string
+          pattern: ^(?=.*[1-9])[0-9]+([.,][0-9]{1,3})?$
+          description: Десятичная строка. В запросе допустимы точка и запятая, в ответе используется точка.
+        prefix:
+          type: string
+          description: При отсутствии сервер формирует префикс из названия.
+    GardenInput:
+      type: object
+      required:
+      - name
+      - crop_id
+      - area_ha
+      - planting_date
+      - places_per_row
+      properties:
+        name:
+          type: string
+          minLength: 1
+        crop_id:
+          $ref: '#/components/schemas/UUID'
+        area_ha:
+          type: string
+          pattern: ^(?=.*[1-9])[0-9]+([.,][0-9]{1,4})?$
+          description: Десятичная строка. В запросе допустимы точка и запятая, в ответе используется точка.
+        planting_date:
+          type: string
+          format: date
+        places_per_row:
+          type: integer
+          minimum: 1
+          maximum: 100
+    Garden:
+      type: object
+      required:
+      - id
+      - name
+      - crop_id
+      - area_ha
+      - planting_date
+      - places_per_row
+      - initial_tree_count
+      - finance
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        name:
+          type: string
+          minLength: 1
+        crop_id:
+          $ref: '#/components/schemas/UUID'
+        area_ha:
+          type: string
+          pattern: ^(?=.*[1-9])[0-9]+([.,][0-9]{1,4})?$
+          description: Десятичная строка. В запросе допустимы точка и запятая, в ответе используется точка.
+        planting_date:
+          type: string
+          format: date
+        places_per_row:
+          type: integer
+          minimum: 1
+          maximum: 100
+        initial_tree_count:
+          type: integer
+          minimum: 1
+          maximum: 10000
+        finance:
+          $ref: '#/components/schemas/Finance'
+    Finance:
+      type: object
+      required:
+      - revenue_cents
+      - annual_revenue_cents
+      - annual_costs_cents
+      properties:
+        revenue_cents:
+          type: integer
+          format: int64
+          minimum: 0
+        annual_revenue_cents:
+          type: integer
+          format: int64
+          minimum: 0
+        annual_costs_cents:
+          type: integer
+          format: int64
+          minimum: 0
+    Tree:
+      type: object
+      required:
+      - id
+      - row
+      - place
+      - status
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        row:
+          type: integer
+          minimum: 1
+        place:
+          type: integer
+          minimum: 1
+        status:
+          $ref: '#/components/schemas/TreeStatus'
+    TreeLookup:
+      type: object
+      required:
+      - garden_id
+      - tree
+      properties:
+        garden_id:
+          $ref: '#/components/schemas/UUID'
+        tree:
+          $ref: '#/components/schemas/Tree'
+    AiResult:
+      type: object
+      required:
+      - diagnosis
+      - recommendations
+      properties:
+        diagnosis:
+          type: string
+          minLength: 1
+        recommendations:
+          type: string
+          minLength: 1
+    ObservationInput:
+      type: object
+      required:
+      - status
+      properties:
+        status:
+          $ref: '#/components/schemas/TreeStatus'
+        comment:
+          type: string
+        diagnosis:
+          type: string
+        recommendations:
+          type: string
+        sample_photo:
+          type: boolean
+        photo:
+          type: string
+          format: binary
+          description: JPEG или PNG, до 10 МБ.
+        original_ai:
+          $ref: '#/components/schemas/AiResult'
+    Observation:
+      type: object
+      required:
+      - id
+      - garden_id
+      - tree_id
+      - created_at
+      - status
+      - comment
+      - diagnosis
+      - recommendations
+      - sample_photo
+      - photo_path
+      - original_ai
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        garden_id:
+          $ref: '#/components/schemas/UUID'
+        tree_id:
+          $ref: '#/components/schemas/UUID'
+        created_at:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/TreeStatus'
+        comment:
+          type: string
+        diagnosis:
+          type: string
+        recommendations:
+          type: string
+        sample_photo:
+          type: boolean
+        photo_path:
+          type:
+          - string
+          - 'null'
+          description: Относительный путь к фотографии в объектном хранилище.
+        original_ai:
+          anyOf:
+          - $ref: '#/components/schemas/AiResult'
+          - type: 'null'
+    DiagnosisInput:
+      type: object
+      properties:
+        photo:
+          type: string
+          format: binary
+          description: JPEG или PNG, до 10 МБ.
+        sample_photo:
+          type: boolean
+      anyOf:
+      - required:
+        - photo
+      - required:
+        - sample_photo
+        properties:
+          sample_photo:
+            const: true
+    ZoneInput:
+      type: object
+      required:
+      - name
+      - color
+      - tree_ids
+      properties:
+        name:
+          type: string
+          minLength: 1
+        color:
+          type: integer
+          enum:
+          - 0
+          - 1
+          - 2
+        tree_ids:
+          type: array
+          items:
+            $ref: '#/components/schemas/UUID'
+          minItems: 1
+    Zone:
+      type: object
+      required:
+      - id
+      - garden_id
+      - name
+      - color
+      - tree_ids
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        garden_id:
+          $ref: '#/components/schemas/UUID'
+        name:
+          type: string
+          minLength: 1
+        color:
+          type: integer
+          enum:
+          - 0
+          - 1
+          - 2
+        tree_ids:
+          type: array
+          items:
+            $ref: '#/components/schemas/UUID'
+          minItems: 1
+    ScheduleInput:
+      type: object
+      required:
+      - zone_id
+      - start
+      - end
+      properties:
+        zone_id:
+          $ref: '#/components/schemas/UUID'
+        start:
+          type: string
+          description: Дата и время ISO 8601; допускается местное время без смещения.
+          example: 2026-10-30T07:00
+        end:
+          type: string
+          description: Дата и время ISO 8601; допускается местное время без смещения.
+          example: 2026-10-30T07:00
+    Schedule:
+      type: object
+      required:
+      - id
+      - garden_id
+      - zone_id
+      - start
+      - end
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        garden_id:
+          $ref: '#/components/schemas/UUID'
+        zone_id:
+          $ref: '#/components/schemas/UUID'
+        start:
+          type: string
+          description: Дата и время ISO 8601; допускается местное время без смещения.
+          example: 2026-10-30T07:00
+        end:
+          type: string
+          description: Дата и время ISO 8601; допускается местное время без смещения.
+          example: 2026-10-30T07:00
+    ExpenseInput:
+      type: object
+      required:
+      - title
+      - category
+      - quantity
+      - unit
+      - price
+      - date
+      properties:
+        title:
+          type: string
+          minLength: 1
+        category:
+          type: string
+        quantity:
+          type: string
+          pattern: ^(?=.*[1-9])[0-9]+([.,][0-9]+)?$
+          description: Десятичная строка. В запросе допустимы точка и запятая, в ответе используется точка.
+        unit:
+          type: string
+          minLength: 1
+        price:
+          type: string
+          pattern: ^[0-9]+([.,][0-9]+)?$
+          description: Десятичная строка. В запросе допустимы точка и запятая, в ответе используется точка.
+        date:
+          type: string
+          format: date
+    Expense:
+      type: object
+      required:
+      - id
+      - garden_id
+      - title
+      - category
+      - quantity
+      - unit
+      - price
+      - date
+      - total_cents
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        garden_id:
+          $ref: '#/components/schemas/UUID'
+        title:
+          type: string
+          minLength: 1
+        category:
+          type: string
+        quantity:
+          type: string
+          pattern: ^(?=.*[1-9])[0-9]+([.,][0-9]+)?$
+          description: Десятичная строка. В запросе допустимы точка и запятая, в ответе используется точка.
+        unit:
+          type: string
+          minLength: 1
+        price:
+          type: string
+          pattern: ^[0-9]+([.,][0-9]+)?$
+          description: Десятичная строка. В запросе допустимы точка и запятая, в ответе используется точка.
+        date:
+          type: string
+          format: date
+        total_cents:
+          type: integer
+          format: int64
+          minimum: 0
+    NoteInput:
+      type: object
+      required:
+      - text
+      properties:
+        text:
+          type: string
+          minLength: 1
+    TreeNote:
+      type: object
+      required:
+      - id
+      - tree_id
+      - text
+      - created_at
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        tree_id:
+          $ref: '#/components/schemas/UUID'
+        text:
+          type: string
+          minLength: 1
+        created_at:
+          type: string
+          format: date-time
+    SettingsInput:
+      type: object
+      required:
+      - current_garden_id
+      properties:
+        current_garden_id:
+          $ref: '#/components/schemas/UUID'
+    PrinterInput:
+      type: object
+      required:
+      - device
+      properties:
+        device:
+          type: string
+          minLength: 1
+    Printer:
+      type: object
+      required:
+      - device
+      properties:
+        device:
+          type:
+          - string
+          - 'null'
+    Settings:
+      type: object
+      required:
+      - current_garden_id
+      - printer
+      properties:
+        current_garden_id:
+          $ref: '#/components/schemas/UUID'
+        printer:
+          $ref: '#/components/schemas/Printer'
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+            message:
+              type: string
