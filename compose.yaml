@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: smartorchard
+      POSTGRES_USER: smartorchard
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  migrate:
+    image: redgate/flyway:12.6.1
+    profiles: ["migrate"]
+    command: ["migrate"]
+    restart: "no"
+    environment:
+      FLYWAY_URL: jdbc:postgresql://db:5432/smartorchard
+      FLYWAY_USER: smartorchard
+      FLYWAY_PASSWORD: ${DB_PASSWORD}
+      FLYWAY_LOCATIONS: filesystem:/flyway/sql
+      FLYWAY_CONNECT_RETRIES: "30"
+      FLYWAY_VALIDATE_MIGRATION_NAMING: "true"
+    volumes:
+      - ./migrations:/flyway/sql:ro
+    depends_on:
+      db:
+        condition: service_started
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://smartorchard:${DB_PASSWORD}@db:5432/smartorchard
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_started
+
+volumes:
+  postgres_data:
